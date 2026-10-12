@@ -1,0 +1,212 @@
+
+/* MediSecure — Professional teal healthcare theme */
+
+:root {
+  --primary: #087f73;
+  --primary-dark: #06665e;
+  --primary-light: #ddf5ef;
+  --accent-blue: #256b8b;
+  --page-bg: #f0f8f8;
+  --card-bg: #ffffff;
+  --text-main: #183b43;
+  --text-muted: #647a80;
+  --border: #d5e2e5;
+}
+
+/* General page settings */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: var(--text-main);
+}
+
+/* Login and registration page */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 16px;
+  background:
+    radial-gradient(circle at top left, #d8f2ee 0, transparent 42%),
+    linear-gradient(135deg, #f0f8f8, #eaf3f8);
+}
+
+/* Login card */
+.login-card {
+  width: 100%;
+  max-width: 410px;
+  padding: 36px;
+  background: var(--card-bg);
+  border: 1px solid #e0ebec;
+  border-radius: 20px;
+  box-shadow: 0 18px 50px rgba(27, 76, 82, 0.12);
+  animation: cardEnter 0.35s ease-out;
+}
+
+/* Brand */
+.logo {
+  color: var(--primary);
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-title {
+  color: var(--text-main);
+  font-size: 25px;
+  font-weight: 700;
+  margin: 0 0 22px;
+}
+
+/* Input fields and role selector */
+.input-box,
+.role-select {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-box::placeholder {
+  color: #87979c;
+}
+
+.input-box:focus,
+.role-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(8, 127, 115, 0.12);
+}
+
+/* Primary buttons */
+.login-button,
+.primary-button {
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.login-button {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+.login-button:hover,
+.primary-button:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 5px 14px rgba(8, 127, 115, 0.18);
+  transform: translateY(-1px);
+}
+
+.login-button:focus-visible,
+.primary-button:focus-visible,
+.logout-button:focus-visible,
+.register-link:focus-visible {
+  outline: 3px solid #8bd6ca;
+  outline-offset: 3px;
+}
+
+/* Registration link */
+.register-text {
+  margin-top: 22px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.register-link {
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.register-link:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* Feedback messages */
+.message {
+  color: var(--text-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* General reusable buttons */
+button {
+  font-family: inherit;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Responsive layout */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 26px 22px;
+    border-radius: 16px;
+  }
+
+  .logo {
+    font-size: 27px;
+  }
+
+  .login-title {
+    font-size: 23px;
+  }
+}
+
+/* Entrance animation */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
