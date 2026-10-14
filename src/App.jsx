@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API = "http://localhost:8080/api";
+const API = import.meta.env.VITE_API_BASE_URL || "https://mediguide-backend-1sn3.onrender.com/api";
 
 const authHeaders = (token, extra = {}) => ({
   ...extra,
@@ -14,9 +14,45 @@ function App() {
   const [role, setRole] = useState("");
   const [message, setMessage] = useState("");
 
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-  const [view, setView] = useState("home");
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("medisecure_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [loggedIn, setLoggedIn] = useState(() => {
+    try {
+      return !!sessionStorage.getItem("medisecure_user");
+    } catch {
+      return false;
+    }
+  });
+
+  const [demoRole, setDemoRole] = useState(null);
+
+  const [view, setView] = useState(() => {
+    try {
+      const savedUser = sessionStorage.getItem("medisecure_user");
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        const savedView = sessionStorage.getItem("medisecure_view");
+        if (savedView) return savedView;
+        return parsed.role === "PATIENT" ? "patient" : "home";
+      }
+    } catch {}
+    return "home";
+  });
+
+  const changeView = (newView) => {
+    setView(newView);
+    try {
+      sessionStorage.setItem("medisecure_view", newView);
+    } catch {}
+  };
+
 
   const [records, setRecords] = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
@@ -178,9 +214,22 @@ function App() {
   };
   // Login and registration
   const handleSubmit = async () => {
-    if (!email.trim() || !password || !role) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !password || !role) {
       setMessage("Please fill all fields.");
       return;
+    }
+
+    if (isRegister) {
+      if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+        setMessage("Please enter a valid email address.");
+        return;
+      }
+      if (password.length < 8) {
+        setMessage("Password must be at least 8 characters long.");
+        return;
+      }
     }
 
     const endpoint = isRegister ? "register" : "login";
@@ -188,46 +237,57 @@ function App() {
     try {
       const response = await fetch(
         `${API}/auth/${endpoint}?email=${encodeURIComponent(
-          email.trim()
+          cleanEmail
         )}&password=${encodeURIComponent(password)}&role=${encodeURIComponent(
           role
         )}`,
         { method: "POST" }
       );
 
+      const resultText = await response.text();
+      let responseData = null;
+      try {
+        responseData = JSON.parse(resultText);
+      } catch {}
+
       if (!response.ok) {
-  const errorText = await response.text();
-
-  setMessage(
-    errorText ||
-      (isRegister
-        ? "Registration failed. Email may already exist."
-        : "Invalid email, password, or role.")
-  );
-  return;
-}
-
-      const data = await response.json();
+        const errorMsg =
+          (responseData && (responseData.message || responseData.error)) ||
+          resultText ||
+          (isRegister
+            ? "Registration failed. Email may already exist."
+            : "Invalid email, password, or role.");
+        setMessage(errorMsg);
+        return;
+      }
 
       if (isRegister) {
-        setMessage("Registration successful. Please log in.");
+        setMessage("Registration successful! You can now log in.");
         setIsRegister(false);
         setPassword("");
         setRole("");
       } else {
-        setUser(data);
+        const userData = responseData;
+        setUser(userData);
         setLoggedIn(true);
-        setView(data.role === "PATIENT" ? "patient" : "home");
+        const targetView = userData.role === "PATIENT" ? "patient" : "home";
+        changeView(targetView);
+        try {
+          sessionStorage.setItem("medisecure_user", JSON.stringify(userData));
+          sessionStorage.setItem("medisecure_view", targetView);
+        } catch {}
         setMessage("");
       }
     } catch {
-      setMessage("Cannot connect to backend. Check Spring Boot.");
+      setMessage("Cannot connect to backend. Check network or backend server.");
     }
   };
 
+
   // Create a discharge record
   const createDischarge = async () => {
-    if (!patientId || !doctorId || !instructions.trim()) {
+    const finalDoctorId = doctorId || (user?.id ? String(user.id) : "1");
+    if (!patientId || !finalDoctorId || !instructions.trim()) {
       setDischargeMessage("Please fill all fields.");
       return;
     }
@@ -245,7 +305,7 @@ function App() {
         }),
         body: JSON.stringify({
           patientId: Number(patientId),
-          doctorId: Number(doctorId),
+          doctorId: Number(finalDoctorId),
           originalInstructions: instructions.trim(),
         }),
       });
@@ -265,7 +325,7 @@ function App() {
       setPatientId("");
       setDoctorId("");
       setInstructions("");
-      setView("detail");
+      changeView("detail");
     } catch (error) {
       setDischargeMessage(
         `Could not create record: ${error.message}`
@@ -277,8 +337,9 @@ function App() {
   const openRecord = (selectedRecord) => {
     setRecord(selectedRecord);
     setProcessingMessage("");
-    setView("detail");
+    changeView("detail");
   };
+
 
   // Simplify, translate, validate, or approve a record
   const runRecordAction = async (action, method = "POST") => {
@@ -409,9 +470,14 @@ function App() {
   const logout = () => {
     window.speechSynthesis?.cancel();
 
+    try {
+      sessionStorage.removeItem("medisecure_user");
+      sessionStorage.removeItem("medisecure_view");
+    } catch {}
+
     setLoggedIn(false);
     setUser(null);
-    setView("home");
+    changeView("home");
     setRecords([]);
     setPatients([]);
     setRecord(null);
@@ -468,12 +534,12 @@ function App() {
 
                 <button
                   className="primary-button"
-                  
-onClick={() => {
-  setDischargeMessage("");
-  loadPatients();
-  setView("create");
-}}
+                  onClick={() => {
+                    setDischargeMessage("");
+                    setDoctorId(user?.id ? String(user.id) : "1");
+                    loadPatients();
+                    changeView("create");
+                  }}
                 >
                   Create Discharge Instructions
                 </button>
@@ -485,14 +551,14 @@ onClick={() => {
                   role="button"
                   tabIndex={0}
                   style={{ cursor: "pointer" }}
-                  onClick={() => setView("patients")}
+                  onClick={() => changeView("patients")}
                   onKeyDown={(event) => {
                     if (
                       event.key === "Enter" ||
                       event.key === " "
                     ) {
                       event.preventDefault();
-                      setView("patients");
+                      changeView("patients");
                     }
                   }}
                 >
@@ -505,14 +571,14 @@ onClick={() => {
                   role="button"
                   tabIndex={0}
                   style={{ cursor: "pointer" }}
-                  onClick={() => setView("records")}
+                  onClick={() => changeView("records")}
                   onKeyDown={(event) => {
                     if (
                       event.key === "Enter" ||
                       event.key === " "
                     ) {
                       event.preventDefault();
-                      setView("records");
+                      changeView("records");
                     }
                   }}
                 >
@@ -522,6 +588,7 @@ onClick={() => {
               </div>
             </>
           )}
+
 
           {view === "patients" && (
             <section className="feature-card">
@@ -569,10 +636,11 @@ onClick={() => {
               <button
                 className="logout-button"
                 style={{ marginTop: "20px" }}
-                onClick={() => setView("home")}
+                onClick={() => changeView("home")}
               >
                 Back to Dashboard
               </button>
+
             </section>
           )}
 
@@ -622,7 +690,7 @@ onClick={() => {
               <button
                 className="logout-button"
                 style={{ marginTop: "20px" }}
-                onClick={() => setView("home")}
+                onClick={() => changeView("home")}
               >
                 Back to Dashboard
               </button>
@@ -650,7 +718,7 @@ onClick={() => {
                 className="input-box"
                 type="number"
                 placeholder="Doctor ID"
-                value={doctorId}
+                value={doctorId || (user?.id ? String(user.id) : "")}
                 onChange={(event) => setDoctorId(event.target.value)}
               />
 
@@ -674,10 +742,11 @@ onClick={() => {
               <button
                 className="logout-button"
                 style={{ marginLeft: "10px" }}
-                onClick={() => setView("home")}
+                onClick={() => changeView("home")}
               >
                 Cancel
               </button>
+
 
               {dischargeMessage && (
                 <p className="message">{dischargeMessage}</p>
@@ -771,11 +840,12 @@ onClick={() => {
                 style={{ marginTop: "20px" }}
                 onClick={() => {
                   setRecord(null);
-                  setView("records");
+                  changeView("records");
                 }}
               >
                 Back to Records
               </button>
+
             </section>
           )}
         </main>

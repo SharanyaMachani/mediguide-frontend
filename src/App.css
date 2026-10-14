@@ -209,4 +209,55 @@ button:disabled {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+/* Public Demo Mode */
+.demo-section {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.demo-heading {
+  margin: 0 0 8px;
+  color: var(--text-main);
+  font-size: 18px;
+}
+
+.demo-description {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.demo-button {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: white;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.demo-button:hover {
+  background: var(--primary-light);
+}
+
+.demo-notice {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-size: 12px;
+  line-height: 1.6;
+}
 }
